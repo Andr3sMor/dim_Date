@@ -1,0 +1,43 @@
+# Archivos de entorno virtual
+venv/
+env/
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+
+# Archivos de configuración local y credenciales
+config.py
+*.env
+.aws/
+aws_credentials*
+
+# Archivos generados por el sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de datos y logs
+*.parquet
+*.csv
+*.log
+logs/
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos de Python compilados
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de pruebas y cobertura
+.coverage
+htmlcov/
+*.prof
+
+# Archivos de dependencias
+requirements.txt.lock
