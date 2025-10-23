@@ -26,6 +26,7 @@ jobs:
       - name: Ejecutar tests de ETL mockeado
         run: |
           source env/bin/activate
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest -v tests --maxfail=1 --disable-warnings
   
   subir-al-s3:
