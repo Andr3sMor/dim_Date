@@ -33,7 +33,7 @@ def create_prefix_if_needed(bucket, prefix):
         raise RuntimeError(f"Error al verificar/crear el prefijo {prefix}: {e}")
 
 def main():
-    # --- VERIFICACIÓN DE BUCKET ---
+    # --- VERIFICACIÓN DEL BUCKET ---
     verify_bucket_exists(bucket_output)
     create_prefix_if_needed(bucket_output, prefix_output)
 
