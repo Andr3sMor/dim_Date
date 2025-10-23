@@ -32,7 +32,7 @@ def test_etl_dim_date_creates_output():
 
     # Reemplazar el cliente s3 global del script con el cliente simulado
     with patch('etl.etl_dim_date.s3', s3_mock):
-        # Redirigir stdout para evitar mensajes de consola en los tests
+        # Redirigir stdout para evitar mensajes de consola 
         original_stdout = sys.stdout
         sys.stdout = StringIO()
 
