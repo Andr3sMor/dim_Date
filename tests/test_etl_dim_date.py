@@ -68,7 +68,7 @@ def test_etl_dim_date_creates_output():
         assert df_out["rental_date"].min() == pd.to_datetime("2000-01-01"), "Fecha mínima incorrecta"
         assert df_out["rental_date"].max() == pd.to_datetime("2030-12-31"), "Fecha máxima incorrecta"
 
-        # Validar el tamaño del DataFrame (11,323 días entre 2000-01-01 y 2030-12-31)
+        # Validar el tamaño del DataFrame 
         assert len(df_out) == 11323, f"Se esperaban 11,323 registros, pero se obtuvieron {len(df_out)}"
 
         # Validar tipos de datos
