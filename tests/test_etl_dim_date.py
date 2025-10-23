@@ -85,7 +85,7 @@ def test_etl_dim_date_creates_output():
         assert not df_out["date_id"].isna().any(), "date_id no debe tener valores nulos"
         assert not df_out["rental_date"].isna().any(), "rental_date no debe tener valores nulos"
 
-        print("✅ ETL dim_date verificado exitosamente.")
+        print("ETL dim_date verificado exitosamente.")
 
 if __name__ == "__main__":
     test_etl_dim_date_creates_output()
