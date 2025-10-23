@@ -50,7 +50,14 @@ jobs:
         run: |
           echo "Subiendo script etl_dim_date.py a S3..."
           aws s3 cp etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts/etl_dim_date.py --region us-east-1 --acl bucket-owner-full-control
-          aws s3 ls s3://${{ secrets.S3_GLUE_BUCKET }}-us-east-1/scripts/etl_dim_date.py --region us-east-1
           echo "ETL actualizado en directorio de Glue"
 
- 
+  ejecutar-etl:
+    runs-on: ubuntu-latest
+    needs: subir-al-s3
+    steps:
+      - name: Ejecutar trabajo de Glue para procesar datos
+        run: |
+          echo "Ejecutando el trabajo ETL en AWS Glue..."
+          aws glue start-job-run --job-name "ETL_dim_date" --region us-east-1
+          echo "Trabajo de Glue iniciado para procesar datos"
