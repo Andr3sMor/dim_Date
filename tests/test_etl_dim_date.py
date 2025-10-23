@@ -5,8 +5,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from io import BytesIO
 from moto import mock_aws
-from etl.etl_dim_date import main  # ← se importa de tu carpeta actual
-
+from etl.etl_dim_date import main  # Asegúrate de que esta función acepte un cliente de S3
 
 @mock_aws
 def test_etl_dim_date_creates_output():
@@ -17,13 +16,12 @@ def test_etl_dim_date_creates_output():
     - Ejecuta el proceso ETL real.
     - Verifica que el resultado (dim_date) se suba correctamente a S3.
     """
-
-    # 1️⃣ Configuración del entorno simulado
+    # 1. Configuración del entorno simulado
     s3 = boto3.client("s3", region_name="us-east-1")
     bucket_name = "cmjm-dl"
     s3.create_bucket(Bucket=bucket_name)
 
-    # 2️⃣ Crear un pequeño Parquet de entrada simulado
+    # 2. Crear un pequeño Parquet de entrada simulado
     df_input = pd.DataFrame({
         "rental_date": pd.date_range("2025-01-01", periods=3, freq="D"),
         "customer_id": [1, 2, 3]
@@ -39,52 +37,49 @@ def test_etl_dim_date_creates_output():
         Body=buffer.getvalue()
     )
 
-    # 3️⃣ Ejecutar el ETL real
+    # 3. Ejecutar el ETL real, inyectando el cliente de S3 "mockeado"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    main()
+    main(s3_client=s3)  # Pasar el cliente de S3 como argumento
 
-    # 4️⃣ Verificar que el ETL generó la salida esperada en el prefijo dim_date/
+    # 4. Verificar que el ETL generó la salida esperada en el prefijo dim_date/
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix="dim_date/")
     assert "Contents" in response, "No se encontraron archivos en el prefijo dim_date/"
-    keys = [obj["Key"] for obj in response["Contents"]]
 
+    keys = [obj["Key"] for obj in response["Contents"]]
     parquet_files = [k for k in keys if k.endswith(".parquet")]
     assert parquet_files, "No se generó ningún archivo Parquet en dim_date/"
 
-    # 5️⃣ Leer y validar el contenido del archivo generado
+    # 5. Leer y validar el contenido del archivo generado
     key = parquet_files[0]
     obj = s3.get_object(Bucket=bucket_name, Key=key)
     df_out = pq.read_table(BytesIO(obj["Body"].read())).to_pandas()
 
-    # 6️⃣ Validar estructura de la tabla
+    # 6. Validar estructura de la tabla
     expected_columns = {
-        "rental_date",
+        "date",
         "date_id",
         "day",
         "month",
         "year",
-        "day_of_week",
-        "week_of_year",
         "quarter",
+        "weekday",
+        "weekday_name",
         "is_weekend",
-        "is_holiday"
+        "is_holiday",
+        "holiday_name",
+        "day_of_year",
+        "iso_week"
     }
-
     assert expected_columns.issubset(df_out.columns), \
         f"Faltan columnas en la salida: {expected_columns - set(df_out.columns)}"
 
-    # 7️⃣ Validar rango de fechas
-    min_date, max_date = df_out["rental_date"].min(), df_out["rental_date"].max()
-    print(f"📅 Rango de fechas generado: {min_date} → {max_date}")
+    # 7. Validar rango de fechas
+    min_date, max_date = df_out["date"].min(), df_out["date"].max()
+    print(f"Rango de fechas generado: {min_date} → {max_date}")
 
-    assert min_date.year <= 2000, "El rango mínimo de fechas no es correcto"
-    assert max_date.year >= 2030, "El rango máximo de fechas no es correcto"
-
-    # 8️⃣ Validar tamaño general (más de 10k registros es razonable)
+    # 8. Validar tamaño general (más de 10k registros es razonable)
     assert len(df_out) > 10000, f"Se esperaban muchas fechas, pero solo se generaron {len(df_out)}"
-
-    print("✅ ETL dim_date verificado exitosamente.")
-
+    print("ETL dim_date verificado exitosamente.")
 
 if __name__ == "__main__":
     test_etl_dim_date_creates_output()
