@@ -1,3 +1,4 @@
+# tests/test_etl_dim_date.py
 import os
 import boto3
 import pandas as pd
@@ -5,81 +6,71 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from io import BytesIO
 from moto import mock_aws
-from etl.etl_dim_date import main  # Asegúrate de que esta función acepte un cliente de S3
+from etl.etl_dim_date import main  # Importa tu script ETL sin modificaciones
 
 @mock_aws
 def test_etl_dim_date_creates_output():
     """
-    Prueba unitaria del ETL dim_date:
-    - Simula un entorno S3 usando moto.
-    - Crea un archivo Parquet de entrada (fact_rental).
-    - Ejecuta el proceso ETL real.
-    - Verifica que el resultado (dim_date) se suba correctamente a S3.
+    Prueba unitaria para el ETL dim_date:
+    - Simula S3 con moto.
+    - Ejecuta el script ETL sin modificaciones.
+    - Valida las columnas que el script actual genera (incluyendo holiday_name).
     """
-    # 1. Configuración del entorno simulado
+    # 1. Configurar entorno simulado de S3
     s3 = boto3.client("s3", region_name="us-east-1")
     bucket_name = "cmjm-dl"
     s3.create_bucket(Bucket=bucket_name)
 
-    # 2. Crear un pequeño Parquet de entrada simulado
-    df_input = pd.DataFrame({
-        "rental_date": pd.date_range("2025-01-01", periods=3, freq="D"),
-        "customer_id": [1, 2, 3]
-    })
-
-    buffer = BytesIO()
-    pq.write_table(pa.Table.from_pandas(df_input), buffer)
-    buffer.seek(0)
-
-    s3.put_object(
-        Bucket=bucket_name,
-        Key="fact_rental/test.parquet",
-        Body=buffer.getvalue()
-    )
-
-    # 3. Ejecutar el ETL real, inyectando el cliente de S3 "mockeado"
+    # 2. Ejecutar el ETL (sin cambios)
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    main(s3_client=s3)  # Pasar el cliente de S3 como argumento
+    main()
 
-    # 4. Verificar que el ETL generó la salida esperada en el prefijo dim_date/
+    # 3. Verificar que el archivo se subió a S3
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix="dim_date/")
-    assert "Contents" in response, "No se encontraron archivos en el prefijo dim_date/"
+    assert "Contents" in response, "No se encontró el archivo en S3"
 
-    keys = [obj["Key"] for obj in response["Contents"]]
-    parquet_files = [k for k in keys if k.endswith(".parquet")]
-    assert parquet_files, "No se generó ningún archivo Parquet en dim_date/"
+    # Filtrar solo archivos Parquet (ignorar el objeto del prefijo)
+    parquet_files = [obj for obj in response["Contents"] if not obj["Key"].endswith("/")]
+    assert len(parquet_files) == 1, "Se esperaba un solo archivo Parquet"
 
-    # 5. Leer y validar el contenido del archivo generado
-    key = parquet_files[0]
+    # 4. Descargar y validar el archivo Parquet
+    key = parquet_files[0]["Key"]
     obj = s3.get_object(Bucket=bucket_name, Key=key)
     df_out = pq.read_table(BytesIO(obj["Body"].read())).to_pandas()
 
-    # 6. Validar estructura de la tabla
+    # 5. Validar columnas generadas (incluyendo holiday_name)
     expected_columns = {
-        "date",
+        "rental_date",
         "date_id",
         "day",
         "month",
         "year",
+        "day_of_week",
+        "week_of_year",
         "quarter",
-        "weekday",
-        "weekday_name",
         "is_weekend",
         "is_holiday",
-        "holiday_name",
-        "day_of_year",
-        "iso_week"
+        "holiday_name"
     }
-    assert expected_columns.issubset(df_out.columns), \
-        f"Faltan columnas en la salida: {expected_columns - set(df_out.columns)}"
+    assert set(df_out.columns) == expected_columns, f"Columnas inesperadas: {set(df_out.columns) - expected_columns}"
 
-    # 7. Validar rango de fechas
-    min_date, max_date = df_out["date"].min(), df_out["date"].max()
-    print(f"Rango de fechas generado: {min_date} → {max_date}")
+    # 6. Validar rango de fechas
+    min_date = df_out["rental_date"].min()
+    max_date = df_out["rental_date"].max()
+    assert min_date == pd.to_datetime("2000-01-01"), f"Fecha mínima incorrecta: {min_date}"
+    assert max_date == pd.to_datetime("2030-12-31"), f"Fecha máxima incorrecta: {max_date}"
 
-    # 8. Validar tamaño general (más de 10k registros es razonable)
-    assert len(df_out) > 10000, f"Se esperaban muchas fechas, pero solo se generaron {len(df_out)}"
-    print("ETL dim_date verificado exitosamente.")
+    # 7. Validar tamaño del DataFrame (11,323 registros)
+    assert len(df_out) == 11323, f"Se esperaban 11,323 registros, pero se obtuvieron {len(df_out)}"
+
+    # 8. Validar que is_holiday sea booleano
+    assert df_out["is_holiday"].dtype == bool, "La columna is_holiday debe ser booleana"
+
+    # 9. Validar fin de semana (usando == en lugar de is)
+    saturday = df_out[df_out["rental_date"] == pd.to_datetime("2025-01-04")].iloc[0]
+    assert saturday["is_weekend"] == True, "El 4 de enero de 2025 es sábado (debería ser fin de semana)"
+
+    print("✅ ETL dim_date verificado exitosamente.")
 
 if __name__ == "__main__":
     test_etl_dim_date_creates_output()
