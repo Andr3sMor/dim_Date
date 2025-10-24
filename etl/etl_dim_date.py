@@ -6,7 +6,7 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 import sys
 
-# --- CONFIGURACIÓN  ---
+# --- CONFIGURACIÓN ---
 s3 = boto3.client('s3')
 
 bucket_output = 'cmjm-dl'
