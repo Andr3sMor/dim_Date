@@ -60,7 +60,12 @@ jobs:
           echo "Ruta al archivo: $(pwd)/etl/etl_dim_date.py"
           if [ -f "$(pwd)/etl/etl_dim_date.py" ]; then
             echo "Archivo encontrado, procediendo a subirlo."
-            aws s3 cp $(pwd)/etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts/etl_dim_date.py --region us-east-1 --acl bucket-owner-full-control
+            
+            # --- CORRECCIÓN ---
+            # Se añaden comillas dobles a las rutas de origen y destino para
+            # evitar problemas si el nombre del bucket tiene espacios.
+            aws s3 cp "$(pwd)/etl/etl_dim_date.py" "s3://${{ secrets.S3_GLUE_BUCKET }}/scripts/etl_dim_date.py" --region us-east-1 --acl bucket-owner-full-control
+            
             echo "ETL actualizado en directorio de Glue"
           else
             echo "¡ERROR! El archivo etl_dim_date.py no se encuentra en la ruta esperada."

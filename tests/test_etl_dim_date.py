@@ -76,7 +76,7 @@ def test_etl_dim_date_creates_output():
         assert pd.api.types.is_bool_dtype(df_out["is_weekend"]), "is_weekend debe ser booleano"
         assert pd.api.types.is_bool_dtype(df_out["is_holiday"]), "is_holiday debe ser booleano"
 
-        # Validar algunos valores específicos
+        # Validar algunos valores 
         assert df_out.loc[0, "date_id"] == 20000101, "Primer date_id incorrecto"
         assert df_out.loc[0, "day_of_week"] == "Saturday", "Primer día de la semana incorrecto"
         assert df_out.loc[0, "is_weekend"] == True, "Primer día debería ser fin de semana"
