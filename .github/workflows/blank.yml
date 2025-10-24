@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   tests-etl:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +27,7 @@ jobs:
           source env/bin/activate
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest -v tests --maxfail=1 --disable-warnings
-  
+
   subir-al-s3:
     runs-on: ubuntu-latest
     needs: tests-etl
@@ -46,18 +45,24 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
+      - name: Verificar estructura de directorios antes de subir el archivo
+        run: |
+          echo "Verificando la estructura de directorios..."
+          ls -l
+          ls -l etl/
+          ls -l etl/etl_dim_date.py
+          echo "Fin de verificación de estructura."
+
       - name: Subir script etl_dim_date.py al bucket de Glue
         run: |
           echo "Subiendo script etl_dim_date.py a S3..."
-          aws s3 cp etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts --region us-east-1 --acl bucket-owner-full-control
-          echo "ETL actualizado en directorio de Glue"
-
-  ejecutar-glue:
-    runs-on: ubuntu-latest
-    needs: subir-al-s3
-    steps:
-      - name: Iniciar trabajo de Glue
-        run: |
-          echo "Iniciando trabajo en AWS Glue..."
-          aws glue start-job-run --job-name ${{ secrets.GLUE_JOB_NAME }} --region us-east-1
-          echo "Trabajo de Glue iniciado"
+          # Verifica la ruta completa
+          echo "Ruta al archivo: $(pwd)/etl/etl_dim_date.py"
+          if [ -f "$(pwd)/etl/etl_dim_date.py" ]; then
+            echo "Archivo encontrado, procediendo a subirlo."
+            aws s3 cp $(pwd)/etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts/etl_dim_date.py --region us-east-1 --acl bucket-owner-full-control
+            echo "ETL actualizado en directorio de Glue"
+          else
+            echo "¡ERROR! El archivo etl_dim_date.py no se encuentra en la ruta esperada."
+            exit 1
+          fi

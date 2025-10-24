@@ -30,9 +30,9 @@ def test_etl_dim_date_creates_output():
     s3_mock = boto3.client("s3", region_name="us-east-1")
     s3_mock.create_bucket(Bucket="cmjm-dl")
 
-    # Reemplazar el cliente s3 global del script con el cliente simulado
+    # Reemplazar el cliente s3 con el cliente simulado
     with patch('etl.etl_dim_date.s3', s3_mock):
-        # Redirigir stdout para evitar mensajes de consola
+        # Redirigir stdout para evitar mensajes de consola 
         original_stdout = sys.stdout
         sys.stdout = StringIO()
 
@@ -81,7 +81,7 @@ def test_etl_dim_date_creates_output():
         assert df_out.loc[0, "day_of_week"] == "Saturday", "Primer día de la semana incorrecto"
         assert df_out.loc[0, "is_weekend"] == True, "Primer día debería ser fin de semana"
 
-        # Validar que no haya valores nulos
+        # Validar que no haya valores nulos en el test
         assert not df_out["date_id"].isna().any(), "date_id no debe tener valores nulos"
         assert not df_out["rental_date"].isna().any(), "rental_date no debe tener valores nulos"
 
@@ -89,3 +89,4 @@ def test_etl_dim_date_creates_output():
 
 if __name__ == "__main__":
     test_etl_dim_date_creates_output()
+
