@@ -49,7 +49,7 @@ jobs:
       - name: Subir script etl_dim_date.py al bucket de Glue
         run: |
           echo "Subiendo script etl_dim_date.py a S3..."
-          aws s3 cp etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts/etl_dim_date.py --region us-east-1 --acl bucket-owner-full-control
+          aws s3 cp etl/etl_dim_date.py s3://${{ secrets.S3_GLUE_BUCKET }}/scripts --region us-east-1 --acl bucket-owner-full-control
           echo "ETL actualizado en directorio de Glue"
 
   ejecutar-glue:
