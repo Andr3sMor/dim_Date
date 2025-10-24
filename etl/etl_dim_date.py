@@ -38,7 +38,7 @@ def main():
     create_prefix_if_needed(bucket_output, prefix_output)
 
     # --- GENERAR RANGO DE FECHAS ---
-    start_date = '2000-01-01'
+    start_date = '2029-01-01'
     end_date = '2030-12-31'
     print(f"📅 Generando calendario desde {start_date} hasta {end_date}")
 
